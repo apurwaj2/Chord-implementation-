@@ -4,47 +4,55 @@
 
 #include <iostream>
 #include <Poco/Net/SocketAddress.h>
+#include <Poco/Net/TCPServer.h>
+#include <Poco/Net/StreamSocket.h>
+#include <Poco/Net/TCPServerConnection.h>
 #include <functional>
 #include <unordered_map>
 
 using namespace  std;
 
-typedef Poco::Net::SocketAddress socketAddress;
+typedef Poco::Net::SocketAddress SocketAddress;
+typedef Poco::Net::StreamSocket StreamSocket;
+typedef Poco::Net::TCPServer TCPServer;
 
 class Node {
 
     size_t nodeId;
-    socketAddress socket_address;
+    SocketAddress socket_address;
     int port;
-    socketAddress predecessor;
-    socketAddress successor;
-    std::unordered_map<int, socketAddress> fingerTable;
+    SocketAddress predecessor;
+    SocketAddress successor;
+    std::unordered_map<int, SocketAddress> fingerTable;
+    Node* node;
 
 public:
 
+//    TCPServer listenServer(Poco::Net::TCPServerConnectionFactoryImpl<Listen>());
+
     //constructor
-    Node(socketAddress, int);
+    Node(SocketAddress, int);
 
     //get data
     long getId();
-    socketAddress getAddress();
-    socketAddress getPredecessor();
-    socketAddress getSuccessor();
+    SocketAddress getAddress();
+    SocketAddress getPredecessor();
+    SocketAddress getSuccessor();
     int getPort();
 
     void createRing(Node*);
-    bool join(socketAddress);
-    void notifySuccessor(socketAddress);
-    void handleNotification(socketAddress);
-    socketAddress findSuccessor(long);
-    socketAddress findPredecessor(long);
-    socketAddress closestPredecessor(long);
-    void updateFingerTable(int, socketAddress);
-    void updateFingerEntry(int, socketAddress);
-    void deleteFingerEntryForNode(socketAddress);
+    void join(SocketAddress);
+    void notifySuccessor(SocketAddress);
+    void handleNotification(SocketAddress);
+    SocketAddress findSuccessor(long);
+    SocketAddress findPredecessor(long);
+    SocketAddress closestPredecessor(long);
+    void updateFingerTable(int, SocketAddress);
+    void updateFingerEntry(int, SocketAddress);
+    void deleteFingerEntryForNode(SocketAddress);
     void deleteSuccessor();
     void updateSuccessor();
-    void setPredecessor(socketAddress);
+    void setPredecessor(SocketAddress);
 
 
 };

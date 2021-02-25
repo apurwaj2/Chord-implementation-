@@ -3,6 +3,6 @@ project(untitled)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(untitled main.cpp node.cpp Listen.cpp Listen.h)
+add_executable(untitled main.cpp node.cpp Listen.cpp)
 
-target_link_libraries(untitled PocoNet)
+target_link_libraries(untitled PocoNet PocoFoundation)

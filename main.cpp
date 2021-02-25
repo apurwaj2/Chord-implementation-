@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
         //Get the port number
         int portNum = (int) *argv[2];
         //create socket
-        socketAddress address(node_ipAdd, portNum);
+        SocketAddress address(node_ipAdd, portNum);
         Node *node = new Node(address, portNum);
 
         //Creates ring
@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
         int newPort = (int) *argv[2];
         int portNum = (int) *argv[3];
 
-        socketAddress address(node_ipAdd, portNum);
-
-
+        SocketAddress address(node_ipAdd, portNum);
+        Node *node = new Node(address, portNum);
+        node->join(address);
 
     } else if (strcmp(argv[1], "delete") == 0) {
         cout << "Delete" <<endl;

@@ -3,8 +3,9 @@
 //
 
 #include "node.h"
+#include "Listen.cpp"
 
-Node::Node(socketAddress add, int portnum) {
+Node::Node(SocketAddress add, int portnum) {
 
     socket_address = add;
     port = portnum;
@@ -24,19 +25,40 @@ void Node::createRing(Node* node) {
 
 }
 
-void Node::updateFingerEntry(int i, socketAddress address) {
+void Node::updateFingerEntry(int i, SocketAddress address) {
     fingerTable[i] = address;
-    cout<<i<<" ";
+    //cout<<i<<" ";
 }
 
-bool Node::join(socketAddress address) {
+void Node::join(SocketAddress address) {
+    cout<<"Port "<<port<< endl;
+    Poco::Net::ServerSocket serverSocket(8010);
+    //Configure some server params
+    Poco::Net::TCPServerParams* pParams = new Poco::Net::TCPServerParams();
+    pParams->setMaxThreads(4);
+    pParams->setMaxQueued(4);
+    pParams->setThreadIdleTime(100);
+    TCPServer listenServer(new Poco::Net::TCPServerConnectionFactoryImpl<Listen>(), serverSocket, pParams);
+    listenServer.start();
 
+    //Client side code
+    SocketAddress sa("localhost", 8010);
+    StreamSocket ss(sa);
+    std::string data("hello, world");
+    ss.sendBytes(data.data(), (int) data.size());
+    listenServer.stop();
 }
+
+//int Node::query(int key) {
+//    //lookupKey = stub(key)
+//    //s = Access fingerTable[lookupKey] and get socketAddress
+//    //
+//}
 
 int Node::getPort() {
     return port;
 }
 
-socketAddress Node::getAddress() {
+SocketAddress Node::getAddress() {
     return socket_address;
 }
