@@ -23,25 +23,25 @@ class Node {
     int port;
     SocketAddress predecessor;
     SocketAddress successor;
-    std::unordered_map<int, SocketAddress> fingerTable;
-    Node* node;
+    unordered_map<int, SocketAddress> fingerTable;
+    unordered_map<size_t, string> keyTable;
+
+    //Node* node;
 
 public:
-
-//    TCPServer listenServer(Poco::Net::TCPServerConnectionFactoryImpl<Listen>());
 
     //constructor
     Node(SocketAddress, int);
 
     //get data
-    long getId();
+    size_t getNodeId();
     SocketAddress getAddress();
     SocketAddress getPredecessor();
     SocketAddress getSuccessor();
     int getPort();
 
-    void createRing(Node*);
-    void join(SocketAddress);
+    void createRing();
+    bool join(SocketAddress);
     void notifySuccessor(SocketAddress);
     void handleNotification(SocketAddress);
     SocketAddress findSuccessor(long);
@@ -53,6 +53,9 @@ public:
     void deleteSuccessor();
     void updateSuccessor();
     void setPredecessor(SocketAddress);
-
+    void setSuccessor(SocketAddress);
+    void startListner();
+    void printKeysInNode();
+    void insertKeyInTable(size_t, string);
 
 };

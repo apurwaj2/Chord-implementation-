@@ -14,22 +14,32 @@ int main(int argc, char* argv[]) {
         //First create the chord ring
 
         //Get the port number
-        int portNum = (int) *argv[2];
+        char* port = argv[2];
+        int portNum = stoi(port);
+
         //create socket
         SocketAddress address(node_ipAdd, portNum);
         Node *node = new Node(address, portNum);
 
         //Creates ring
-        node->createRing(node);
+        node->createRing();
 
     } else if (strcmp(argv[1], "join") == 0) {
         cout << "Join" <<endl;
-        int newPort = (int) *argv[2];
-        int portNum = (int) *argv[3];
+        char* port1 = argv[2];
+        int newPort = stoi(port1);
+        char* port2 = argv[3];
+        int portNum = stoi(port2);
 
         SocketAddress address(node_ipAdd, portNum);
-        Node *node = new Node(address, portNum);
-        node->join(address);
+        Node *node = new Node(address, newPort);
+        bool resp = node->join(address);
+
+        if(resp) {
+            cout << "Node successfully joined the chord ring." << endl;
+        } else {
+            cout << "Could not join the new node to the chord ring." << endl;
+        }
 
     } else if (strcmp(argv[1], "delete") == 0) {
         cout << "Delete" <<endl;

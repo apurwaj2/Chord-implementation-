@@ -26,10 +26,10 @@ public:
             char buffer[BUFFER_SIZE];
             int n = ss.receiveBytes(buffer, sizeof(buffer));
             string request(buffer);
-          //  while (n > 0) {
-                //process the request
-                cout << "Received : " << request << endl;
-          //  }
+            cout << "Received : " << request << endl;
+            string data = "I received your message";
+            ss.sendBytes(data.c_str(), data.length());
+
         }
         catch (Poco::Exception& exc)
         {
