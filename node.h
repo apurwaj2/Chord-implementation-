@@ -14,7 +14,7 @@ typedef Poco::Net::SocketAddress SocketAddress;
 typedef Poco::Net::StreamSocket StreamSocket;
 typedef Poco::Net::TCPServer TCPServer;
 
-using namespace  std;
+using namespace std;
 
 class Node {
 
@@ -41,17 +41,15 @@ public:
 
     void createRing();
     bool join(SocketAddress);
-    void notifySuccessor(SocketAddress);
+    string notifySuccessor(SocketAddress);
     void handleNotification(SocketAddress);
     void startListner();
     SocketAddress findSuccessor(size_t);
     SocketAddress findPredecessor(size_t);
-    SocketAddress closestPredecessor(size_t);
-    void updateFingerTable(int, SocketAddress);
+    SocketAddress getFingerEntry(int);
     void updateFingerEntry(int, SocketAddress);
     void deleteFingerEntryForNode(SocketAddress);
     void deleteSuccessor();
-    void updateSuccessor();
     void setPredecessor(SocketAddress);
     void setSuccessor(SocketAddress);
     int fixFinger(int, int);

@@ -50,7 +50,7 @@ size_t Node::getNodeId() {
 void Node::createRing() {
 
     //For ring creation node predecessor is itself & successor is itself
-    setPredecessor(socket_address);
+    setPredecessor(Poco::Net::SocketAddress());
     setSuccessor(socket_address);
     //start listener
     startListner();
@@ -58,15 +58,46 @@ void Node::createRing() {
 
 void Node::updateFingerEntry(int i, SocketAddress address) {
     fingerTable[i] = address;
-
 }
 
 bool Node::join(SocketAddress address) {
     if (address != getAddress()) {
         // Trying to join an existing ring
-
+        string id = to_string(nodeId);
+        SocketAddress successor = requestAddress(address, strcat((char *)"FINDSUCC_", id.c_str()));
+        if(successor == Poco::Net::SocketAddress()) {
+            cout << "Cannot find the node to join the ring" << endl;
+            return false;
+        }
+        updateFingerEntry(1, successor);
     }
-    return 1;
+
+    startListner();
+    return true;
+}
+
+string Node::notifySuccessor(SocketAddress successor) {
+    if (successor != getAddress()) {
+        string port = to_string(getPort());
+        char* address = strcat((char *)"localhost", port.c_str());
+        return sendRequest(successor, strcat((char *) "IAMPRE_", address));
+    } else {
+        return "";
+    }
+}
+
+
+void Node::handleNotification (SocketAddress predecessor) {
+    if (getPredecessor() == Poco::Net::SocketAddress()) {
+        setPredecessor(predecessor);
+    }
+    else {
+        size_t oldPredecessor = hashAddress(getPredecessor());
+        size_t oldPredecessorRelativeId = getRelativeId(nodeId, oldPredecessor);
+        size_t newPredecessorRelativeId = getRelativeId(hashAddress(predecessor), oldPredecessor);
+        if (newPredecessorRelativeId > 0 && newPredecessorRelativeId < oldPredecessorRelativeId)
+            setPredecessor(predecessor);
+    }
 }
 
 //int Node::query(int key) {
@@ -90,10 +121,17 @@ void Node::startListner() {
 
 SocketAddress Node::findSuccessor(size_t keyId) {
 
-    SocketAddress successor;
-
+    SocketAddress successor = getSuccessor();
     //find the predecessor of the keyId
     SocketAddress predecessor = findPredecessor(keyId);
+    if(predecessor != getAddress()) {
+        successor = requestAddress(predecessor, (char *)"YOURSUCC");
+    }
+    // no other node is present
+    if(successor == Poco::Net::SocketAddress()) {
+        successor = getAddress();
+    }
+
     return successor;
 }
 
@@ -197,3 +235,64 @@ int Node::fixFinger(int i, int m) {
 	return 1;
 }
 
+void Node::deleteSuccessor() {
+
+    SocketAddress successor = getSuccessor();
+    if (successor == Poco::Net::SocketAddress())
+        return;
+
+    // get last entry of successor
+    int i = 32;
+    for (i = 32; i > 0; i--) {
+        SocketAddress fingerId = fingerTable[i];
+        if (fingerId != Poco::Net::SocketAddress() && fingerId == successor)
+            break;
+    }
+
+    // delete it
+    for (int j = i; j >= 1 ; j--) {
+        updateFingerEntry(j, Poco::Net::SocketAddress());
+    }
+
+    // if predecessor is successor, delete it
+    if (predecessor!= Poco::Net::SocketAddress() && predecessor == getSuccessor())
+        setPredecessor(Poco::Net::SocketAddress());
+
+    // try to fill successor
+    fillSuccessor(this);
+    successor = getSuccessor();
+
+    // if successor is still null or local node,
+    // and the predecessor is another node, keep asking
+    // it's predecessor until find local node's new successor
+    if ((successor == Poco::Net::SocketAddress() || successor == getSuccessor()) &&
+        predecessor != Poco::Net::SocketAddress() && predecessor != getAddress()) {
+
+        SocketAddress p = predecessor;
+        SocketAddress p_pre = Poco::Net::SocketAddress();
+        while (true) {
+            p_pre = requestAddress(p, "YOURPRE");
+            if (p_pre == Poco::Net::SocketAddress())
+                break;
+
+            // if p's predecessor is node is just deleted,
+            // or itself (nothing found in p), or local address,
+            // p is current node's new successor, break
+            if (p_pre == p || p_pre == getAddress() || p_pre == successor) {
+                break;
+            }
+
+            // else, keep asking
+            else {
+                p = p_pre;
+            }
+        }
+
+        // update successor
+        updateFingerEntry(1, p);
+    }
+}
+
+SocketAddress Node::getFingerEntry(int i) {
+    return fingerTable[i];
+}

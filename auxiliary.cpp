@@ -77,3 +77,24 @@ Poco::Net::SocketAddress requestAddress (Poco::Net::SocketAddress server, string
         return ret;
     }
 }
+
+void fillSuccessor(Node* node) {
+    SocketAddress successor = node->getSuccessor();
+    if (successor == Poco::Net::SocketAddress() || successor == node->getAddress()) {
+        for (int i = 2; i <= 32; i++) {
+            SocketAddress fingerId = node->getFingerEntry(i);
+            if (fingerId != Poco::Net::SocketAddress() && fingerId != node->getAddress()) {
+                for (int j = i-1; j >=1; j--) {
+                    node->updateFingerEntry(j, fingerId);
+                }
+                break;
+            }
+        }
+    }
+    successor = node->getSuccessor();
+    SocketAddress predecessor = node->getPredecessor();
+    if ((successor == Poco::Net::SocketAddress() || successor == node->getAddress()) &&
+        predecessor != Poco::Net::SocketAddress() && predecessor != node->getAddress()) {
+        node->updateFingerEntry(1, node->getPredecessor());
+    }
+}
