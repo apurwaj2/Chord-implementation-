@@ -9,10 +9,8 @@
 
 #define BUFFER_SIZE 2048
 
-
 typedef Poco::Net::StreamSocket StreamSocket;
 typedef Poco::Net::TCPServerConnection TCPServerConnection;
-
 
 using namespace std;
 

@@ -5,13 +5,12 @@ using namespace  std;
 
 int main(int argc, char* argv[]) {
 
-
     //Using the same local machine so using localhost
     string node_ipAdd = "localhost";
     if (strcmp(argv[1], "create") == 0) {
 
-        cout << "Create" <<endl;
         //First create the chord ring
+        cout << "Create" <<endl;
 
         //Get the port number
         char* port = argv[2];
@@ -42,13 +41,14 @@ int main(int argc, char* argv[]) {
         }
 
     } else if (strcmp(argv[1], "delete") == 0) {
-        cout << "Delete" <<endl;
-    } else if (strcmp(argv[1], "query") == 0) {
-        cout << "Query" <<endl;
+        cout << "Delete" << endl;
+    } else if (strcmp(argv[1], "getKey") == 0) {
+        cout << "getKey" << endl;
+    } else if (strcmp(argv[1], "insertKey") == 0) {
+        cout << "insertKey" << endl;
     } else {
         cout << argv[1] << " is an invalid option. Enter a valid option." << endl;
     }
-
 
     return 0;
 }

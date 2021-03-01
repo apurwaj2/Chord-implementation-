@@ -4,12 +4,13 @@
 
 #include "node.h"
 #include "Listen.cpp"
+#include "auxiliary.cpp"
 
 Node::Node(SocketAddress add, int portnum) {
 
     socket_address = add;
     port = portnum;
-    nodeId = hash<string>{}(add.toString());
+    nodeId = hashAddress(add);
 
     //FingerTable updated with null entries
     for (int i = 1; i <= 32; i++) {
@@ -46,20 +47,6 @@ size_t Node::getNodeId() {
     return nodeId;
 }
 
-void Node::printKeysInNode() {
-
-    cout << "Following key entries are present in this node" << endl;
-
-    for(auto it = keyTable.begin(); it != keyTable.end(); it++) {
-        cout << it->first << " : " << it->second << endl;
-    }
-
-}
-
-void Node::insertKeyInTable(size_t id, string value) {
-    keyTable[id] = value;
-}
-
 void Node::createRing() {
 
     //For ring creation node predecessor is itself & successor is itself
@@ -79,6 +66,7 @@ bool Node::join(SocketAddress address) {
         // Trying to join an existing ring
 
     }
+    return 1;
 }
 
 //int Node::query(int key) {
@@ -97,15 +85,115 @@ void Node::startListner() {
     TCPServer listenServer(new Poco::Net::TCPServerConnectionFactoryImpl<Listen>(), serverSocket, pParams);
     listenServer.start();
 
-    //Client side code
-//    char buffer[1024];
-//    SocketAddress sa("localhost", getPort());
-//    StreamSocket ss(sa);
-//    string data("hello, world");
-//    ss.sendBytes(data.data(), (int) data.size());
-//    ss.receiveBytes(buffer, sizeof (buffer));
-//    string reply(buffer);
-//    cout << "Received: " << reply << endl;
 //    listenServer.stop();
+}
+
+SocketAddress Node::findSuccessor(size_t keyId) {
+
+    SocketAddress successor;
+
+    //find the predecessor of the keyId
+    SocketAddress predecessor = findPredecessor(keyId);
+    return successor;
+}
+
+SocketAddress Node::findPredecessor(size_t keyId) {
+
+    SocketAddress n = getAddress();
+    SocketAddress nSuccessor = getSuccessor();
+    size_t relative_successor_id = getRelativeId(hashAddress(getSuccessor()), nodeId);
+    size_t relative_key_id = getRelativeId(keyId, nodeId);
+    SocketAddress most_recently_alive = n;
+
+    while(!(relative_key_id > 0 && relative_key_id <= relative_successor_id)) {
+
+        SocketAddress current = n;
+
+        if(n == getAddress()) {
+            n = closest_preceding_finger(keyId, getNodeId());
+        } else {
+
+			string key = to_string(keyId);
+            SocketAddress result = requestAddress(n, strcat((char *)"CLOSEST_", key.c_str()));
+
+            // if fail to get response, set n to most recently
+            if (result == Poco::Net::SocketAddress()) {
+                n = most_recently_alive;
+                nSuccessor = requestAddress(n, (char *)"YOURSUCC");
+                //if nSuccessor is null
+                if (nSuccessor == Poco::Net::SocketAddress()) {
+                    return getAddress();
+                }
+                continue;
+            }
+
+            // if n's closest is itself, return n
+            else if (result == n)
+                return result;
+
+            // else n's closest is other node "result"
+            else {
+                most_recently_alive = n;
+                nSuccessor = requestAddress(result, (char *)"YOURSUCC");;
+                // if we can get its response, then "result" must be our next n
+                if (nSuccessor != Poco::Net::SocketAddress()) {
+                    n = result;
+                } else {
+                    nSuccessor = requestAddress(n, (char *)"YOURSUCC");
+                }
+            }
+
+            // compute relative ids for while loop judgement
+            relative_successor_id = getRelativeId(hashAddress(nSuccessor), hashAddress(n));
+            relative_key_id = getRelativeId(keyId, hashAddress(n));
+
+        }
+
+        if(current == n)
+            break;
+
+    }
+
+    return n;
+}
+
+void Node::deleteFingerEntryForNode(SocketAddress address) {
+    for (int i = 32; i > 0; i--) {
+        SocketAddress fingerAddress = fingerTable[i];
+        if(fingerAddress == address)
+            fingerTable[i] = Poco::Net::SocketAddress();
+    }
+}
+
+SocketAddress Node::closest_preceding_finger(size_t keyId, size_t nodeId) {
+
+    size_t relative_keyId = getRelativeId(keyId, nodeId);
+
+    for(int i = 32; i > 0; i--) {
+        SocketAddress fingerAddress = fingerTable[i];
+        if(fingerAddress == Poco::Net::SocketAddress()) continue;
+
+        size_t fingerId = hashAddress(fingerAddress);
+        size_t relativeFingerId = getRelativeId(fingerId, nodeId);
+
+        if (relativeFingerId > 0 && relativeFingerId < relativeFingerId)  {
+            string response  = sendRequest(fingerAddress, "KEEP");
+            if (response != "" &&  (strcmp(response.c_str(), "ALIVE") == 0)) {
+                return fingerAddress;
+            }
+
+            // remove it from finger table
+            else {
+                deleteFingerEntryForNode(fingerAddress);
+            }
+        }
+
+    }
+    return getAddress();
+}
+
+int Node::fixFinger(int i, int m) {
+    size_t next = getFingerId(nodeId, i, m);
+	return 1;
 }
 

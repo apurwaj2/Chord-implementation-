@@ -10,11 +10,11 @@
 #include <functional>
 #include <unordered_map>
 
-using namespace  std;
-
 typedef Poco::Net::SocketAddress SocketAddress;
 typedef Poco::Net::StreamSocket StreamSocket;
 typedef Poco::Net::TCPServer TCPServer;
+
+using namespace  std;
 
 class Node {
 
@@ -24,7 +24,6 @@ class Node {
     SocketAddress predecessor;
     SocketAddress successor;
     unordered_map<int, SocketAddress> fingerTable;
-    unordered_map<size_t, string> keyTable;
 
     //Node* node;
 
@@ -44,9 +43,10 @@ public:
     bool join(SocketAddress);
     void notifySuccessor(SocketAddress);
     void handleNotification(SocketAddress);
-    SocketAddress findSuccessor(long);
-    SocketAddress findPredecessor(long);
-    SocketAddress closestPredecessor(long);
+    void startListner();
+    SocketAddress findSuccessor(size_t);
+    SocketAddress findPredecessor(size_t);
+    SocketAddress closestPredecessor(size_t);
     void updateFingerTable(int, SocketAddress);
     void updateFingerEntry(int, SocketAddress);
     void deleteFingerEntryForNode(SocketAddress);
@@ -54,8 +54,7 @@ public:
     void updateSuccessor();
     void setPredecessor(SocketAddress);
     void setSuccessor(SocketAddress);
-    void startListner();
-    void printKeysInNode();
-    void insertKeyInTable(size_t, string);
+    int fixFinger(int, int);
+    SocketAddress closest_preceding_finger(size_t, size_t);
 
 };
