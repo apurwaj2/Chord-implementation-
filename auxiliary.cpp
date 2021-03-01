@@ -23,6 +23,10 @@ size_t hashAddress(Poco::Net::SocketAddress add) {
     return hash<string>{}(add.toString());
 }
 
+size_t hashKey(int key) {
+    return hash<string>{}(to_string(key));
+}
+
 size_t getRelativeId(size_t a, size_t b) {
     size_t c = a-b;
     if(c < 0) {
@@ -97,4 +101,22 @@ void fillSuccessor(Node* node) {
         predecessor != Poco::Net::SocketAddress() && predecessor != node->getAddress()) {
         node->updateFingerEntry(1, node->getPredecessor());
     }
+}
+
+void Query(int key, Node* node) {
+
+    size_t keyId = hashKey(key);
+    cout << "Hash value is " << keyId << endl;
+    string keyHash = to_string(keyId);
+    SocketAddress result = requestAddress(node->getAddress(), strcat("FINDSUCC_", keyHash.c_str()));
+
+    // if fail to send request, local node is disconnected, exit
+    if (result == Poco::Net::SocketAddress()) {
+        cout << "Unable to contact node!" << endl;
+        return;
+    }
+    // print out response
+    cout << "Response from node " << node->getPort() << endl;
+    cout << "Key is present at node " << result.port() << endl;
+
 }

@@ -44,9 +44,17 @@ int main(int argc, char* argv[]) {
         cout << "Delete" << endl;
     } else if (strcmp(argv[1], "getKey") == 0) {
         cout << "getKey" << endl;
-    } else if (strcmp(argv[1], "insertKey") == 0) {
-        cout << "insertKey" << endl;
-    } else {
+        char* key = argv[2];
+        int newKey = stoi(key);
+        char* port = argv[3];
+        int portNum = stoi(port);
+
+        SocketAddress address(node_ipAdd, portNum);
+        Node *node = new Node(address, portNum);
+
+        node->getKey(newKey);
+
+    }  else {
         cout << argv[1] << " is an invalid option. Enter a valid option." << endl;
     }
 

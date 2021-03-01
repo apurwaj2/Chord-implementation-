@@ -29,6 +29,8 @@ class Node {
 
 public:
 
+    TCPServer* listenServer;
+
     //constructor
     Node(SocketAddress, int);
 
@@ -53,6 +55,7 @@ public:
     void setPredecessor(SocketAddress);
     void setSuccessor(SocketAddress);
     int fixFinger(int, int);
+    void getKey(int);
     SocketAddress closest_preceding_finger(size_t, size_t);
 
 };

@@ -16,6 +16,15 @@ Node::Node(SocketAddress add, int portnum) {
     for (int i = 1; i <= 32; i++) {
         updateFingerEntry(i, Poco::Net::SocketAddress());
     }
+
+    Poco::Net::ServerSocket serverSocket(getPort());
+    //Configure some server params
+    Poco::Net::TCPServerParams* pParams = new Poco::Net::TCPServerParams();
+    pParams->setMaxThreads(4);
+    pParams->setMaxQueued(4);
+    pParams->setThreadIdleTime(100);
+    listenServer =  new TCPServer (new Poco::Net::TCPServerConnectionFactoryImpl<Listen>(), serverSocket, pParams);
+
     cout << "Node created successfully!" << endl;
 }
 
@@ -100,22 +109,8 @@ void Node::handleNotification (SocketAddress predecessor) {
     }
 }
 
-//int Node::query(int key) {
-//    //lookupKey = stub(key)
-//    //s = Access fingerTable[lookupKey] and get socketAddress
-//    //
-//}
-
 void Node::startListner() {
-    Poco::Net::ServerSocket serverSocket(getPort());
-    //Configure some server params
-    Poco::Net::TCPServerParams* pParams = new Poco::Net::TCPServerParams();
-    pParams->setMaxThreads(4);
-    pParams->setMaxQueued(4);
-    pParams->setThreadIdleTime(100);
-    TCPServer listenServer(new Poco::Net::TCPServerConnectionFactoryImpl<Listen>(), serverSocket, pParams);
-    listenServer.start();
-
+    listenServer->start();
 //    listenServer.stop();
 }
 
@@ -295,4 +290,8 @@ void Node::deleteSuccessor() {
 
 SocketAddress Node::getFingerEntry(int i) {
     return fingerTable[i];
+}
+
+void Node::getKey(int key) {
+    Query(key, this);
 }
