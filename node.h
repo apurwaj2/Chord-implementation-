@@ -27,6 +27,8 @@ public:
 
     TCPServer* listenServer;
     Thread stabilizer;
+    Thread checkPred;
+    Thread finger;
 
     //constructor
     Node(SocketAddress, int);

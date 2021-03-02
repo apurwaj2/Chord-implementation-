@@ -9,11 +9,6 @@ SocketAddress Finger::getFingerEntry(int i) {
     return fingerTable[i];
 }
 
-int Finger::fixFinger(int i, int m, size_t nodeId) {
-    size_t next = getFingerId(nodeId, i, m);
-    return 1;
-}
-
 void Finger::deleteFingerEntryForNode(SocketAddress address) {
     for (int i = 32; i > 0; i--) {
         SocketAddress fingerAddress = fingerTable[i];

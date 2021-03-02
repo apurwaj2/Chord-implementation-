@@ -19,7 +19,6 @@ public:
     SocketAddress getFingerEntry(int);
     void updateFingerEntry(int, SocketAddress);
     void deleteFingerEntryForNode(SocketAddress);
-    int fixFinger(int, int, size_t);
 
 };
 

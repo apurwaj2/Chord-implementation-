@@ -4,6 +4,8 @@
 #include "node.h"
 #include "Listen.cpp"
 #include "Stabilize.cpp"
+#include "checkPredecessor.cpp"
+#include "fixFingers.cpp"
 
 Node::Node(SocketAddress add, int portnum) {
 
@@ -65,6 +67,10 @@ void Node::createRing() {
     listenServer->start();
     StableRun stable(this);
     stabilizer.start(stable);
+    Checker checker(this);
+    checkPred.start(checker);
+    fixFinger fixer(this);
+    finger.start(fixer);
 }
 
 bool Node::join(SocketAddress address) {
@@ -83,6 +89,10 @@ bool Node::join(SocketAddress address) {
     listenServer->start();
     StableRun stable(this);
     stabilizer.start(stable);
+    Checker checker(this);
+    checkPred.start(checker);
+    fixFinger fixer(this);
+    finger.start(fixer);
     return true;
 }
 
@@ -219,9 +229,11 @@ void Node::getKey(int key) {
 
 void Node::stopThreads() {
 
+    //stabilizer, fixFingers & checkPredecessor should stop after setting alive to false
     alive = false;
     listenServer->stop();
-    stabilizer.join();
+
+    sleep(300);
 
 }
 
