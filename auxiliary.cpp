@@ -2,11 +2,7 @@
 // Created by apurwa on 2/25/21.
 //
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <Poco/Net/SocketAddress.h>
-#include <Poco/Net/StreamSocket.h>
+#include "auxiliary.h"
 
 using namespace std;
 
@@ -27,24 +23,13 @@ size_t hashKey(int key) {
     return hash<string>{}(to_string(key));
 }
 
-size_t getRelativeId(size_t a, size_t b) {
-    size_t c = a-b;
-    if(c < 0) {
-        c += (size_t) pow(2.0, double (32));
-    }
-    return c;
-}
-
 /*
  * Sending request to another node server
  */
 string sendRequest(Poco::Net::SocketAddress server, string request) {
-    //Client side code
-//    listenServer.stop();
-//
     // try to send request to server
-    Poco::Net::SocketAddress sa("localhost", server.port());
-    Poco::Net::StreamSocket ss(sa);
+    SocketAddress sa("localhost", server.port());
+    StreamSocket ss(sa);
     try {
         string data(request);
         ss.sendBytes(data.data(), (int) data.size());
@@ -52,9 +37,6 @@ string sendRequest(Poco::Net::SocketAddress server, string request) {
         cout << "Cannot send request to " << server.port() << endl;
         return NULL;
     }
-
-    // sleep for a short time, waiting for response
-    sleep(20);
 
     // get response in buffer
     char buffer[1024];
@@ -64,12 +46,13 @@ string sendRequest(Poco::Net::SocketAddress server, string request) {
         cout << "Cannot get response " << server.port() << endl;
     }
     string response(buffer);
+    cout << "This is the response " << response << endl;
     ss.close();
 
     return response;
 }
 
-Poco::Net::SocketAddress requestAddress (Poco::Net::SocketAddress server, string request) {
+SocketAddress requestAddress (SocketAddress server, string request) {
 
     string response = sendRequest(server, request);
     if (response == "") {
@@ -77,7 +60,7 @@ Poco::Net::SocketAddress requestAddress (Poco::Net::SocketAddress server, string
     } else if (response.find("NOTHING") != std::string::npos) {
         return server;
     } else {
-        Poco::Net::SocketAddress ret = Poco::Net::SocketAddress("localhost", stoi(response));
+        SocketAddress ret = SocketAddress("localhost", stoi(response));
         return ret;
     }
 }
@@ -86,10 +69,10 @@ void fillSuccessor(Node* node) {
     SocketAddress successor = node->getSuccessor();
     if (successor == Poco::Net::SocketAddress() || successor == node->getAddress()) {
         for (int i = 2; i <= 32; i++) {
-            SocketAddress fingerId = node->getFingerEntry(i);
+            SocketAddress fingerId = node->fingerTable->getFingerEntry(i);
             if (fingerId != Poco::Net::SocketAddress() && fingerId != node->getAddress()) {
                 for (int j = i-1; j >=1; j--) {
-                    node->updateFingerEntry(j, fingerId);
+                    node->fingerTable->updateFingerEntry(j, fingerId);
                 }
                 break;
             }
@@ -99,8 +82,74 @@ void fillSuccessor(Node* node) {
     SocketAddress predecessor = node->getPredecessor();
     if ((successor == Poco::Net::SocketAddress() || successor == node->getAddress()) &&
         predecessor != Poco::Net::SocketAddress() && predecessor != node->getAddress()) {
-        node->updateFingerEntry(1, node->getPredecessor());
+        node->fingerTable->updateFingerEntry(1, node->getPredecessor());
     }
+}
+
+void deleteSuccessor(Node* node) {
+
+    SocketAddress successor = node->getSuccessor();
+    if (successor == Poco::Net::SocketAddress())
+        return;
+
+    // get last entry of successor
+    int i = 32;
+    for (i = 32; i > 0; i--) {
+        SocketAddress fingerId = node->fingerTable->getFingerEntry(i);
+        if (fingerId != Poco::Net::SocketAddress() && fingerId == successor)
+            break;
+    }
+
+    // delete it
+    for (int j = i; j >= 1 ; j--) {
+        node->fingerTable->updateFingerEntry(j, Poco::Net::SocketAddress());
+    }
+
+    // if predecessor is successor, delete it
+    SocketAddress predecessor = node->getPredecessor();
+    if (predecessor!= Poco::Net::SocketAddress() && predecessor == successor)
+        node->setPredecessor(Poco::Net::SocketAddress());
+
+    // try to fill successor
+    fillSuccessor(node);
+
+    // if successor is still null or local node,
+    // and the predecessor is another node, keep asking
+    // it's predecessor until find local node's new successor
+    if ((successor == Poco::Net::SocketAddress() || successor == node->getSuccessor()) &&
+        predecessor != Poco::Net::SocketAddress() && predecessor != node->getAddress()) {
+
+        SocketAddress p = predecessor;
+        SocketAddress p_pre = Poco::Net::SocketAddress();
+        while (true) {
+            p_pre = requestAddress(p, "YOURPRE");
+            if (p_pre == Poco::Net::SocketAddress())
+                break;
+
+            // if p's predecessor is node is just deleted,
+            // or itself (nothing found in p), or local address,
+            // p is current node's new successor, break
+            if (p_pre == p || p_pre == node->getAddress() || p_pre == successor) {
+                break;
+            }
+
+                // else, keep asking
+            else {
+                p = p_pre;
+            }
+        }
+
+        // update successor
+        node->fingerTable->updateFingerEntry(1, p);
+    }
+}
+
+size_t getRelativeId(size_t a, size_t b) {
+    size_t c = a-b;
+    if(c < 0) {
+        c += (size_t) pow(2.0, double (32));
+    }
+    return c;
 }
 
 void Query(int key, Node* node) {
@@ -108,7 +157,7 @@ void Query(int key, Node* node) {
     size_t keyId = hashKey(key);
     cout << "Hash value is " << keyId << endl;
     string keyHash = to_string(keyId);
-    SocketAddress result = requestAddress(node->getAddress(), strcat("FINDSUCC_", keyHash.c_str()));
+    SocketAddress result = requestAddress(node->getAddress(), strcat((char *)"FINDSUCC_", keyHash.c_str()));
 
     // if fail to send request, local node is disconnected, exit
     if (result == Poco::Net::SocketAddress()) {

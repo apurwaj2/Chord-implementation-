@@ -1,20 +1,20 @@
 //
 // Created by apurwa on 2/21/21.
 //
-
 #include "node.h"
 #include "Listen.cpp"
-#include "auxiliary.cpp"
+#include "Stabilize.cpp"
 
 Node::Node(SocketAddress add, int portnum) {
 
     socket_address = add;
     port = portnum;
     nodeId = hashAddress(add);
+    fingerTable = new Finger();
 
     //FingerTable updated with null entries
     for (int i = 1; i <= 32; i++) {
-        updateFingerEntry(i, Poco::Net::SocketAddress());
+        fingerTable->updateFingerEntry(i, Poco::Net::SocketAddress());
     }
 
     Poco::Net::ServerSocket serverSocket(getPort());
@@ -57,16 +57,14 @@ size_t Node::getNodeId() {
 }
 
 void Node::createRing() {
-
     //For ring creation node predecessor is itself & successor is itself
     setPredecessor(Poco::Net::SocketAddress());
     setSuccessor(socket_address);
+    alive= true;
     //start listener
-    startListner();
-}
-
-void Node::updateFingerEntry(int i, SocketAddress address) {
-    fingerTable[i] = address;
+    listenServer->start();
+    StableRun stable(this);
+    stabilizer.start(stable);
 }
 
 bool Node::join(SocketAddress address) {
@@ -78,10 +76,13 @@ bool Node::join(SocketAddress address) {
             cout << "Cannot find the node to join the ring" << endl;
             return false;
         }
-        updateFingerEntry(1, successor);
+        fingerTable->updateFingerEntry(1, successor);
     }
 
-    startListner();
+    alive = true;
+    listenServer->start();
+    StableRun stable(this);
+    stabilizer.start(stable);
     return true;
 }
 
@@ -107,11 +108,6 @@ void Node::handleNotification (SocketAddress predecessor) {
         if (newPredecessorRelativeId > 0 && newPredecessorRelativeId < oldPredecessorRelativeId)
             setPredecessor(predecessor);
     }
-}
-
-void Node::startListner() {
-    listenServer->start();
-//    listenServer.stop();
 }
 
 SocketAddress Node::findSuccessor(size_t keyId) {
@@ -190,20 +186,12 @@ SocketAddress Node::findPredecessor(size_t keyId) {
     return n;
 }
 
-void Node::deleteFingerEntryForNode(SocketAddress address) {
-    for (int i = 32; i > 0; i--) {
-        SocketAddress fingerAddress = fingerTable[i];
-        if(fingerAddress == address)
-            fingerTable[i] = Poco::Net::SocketAddress();
-    }
-}
-
 SocketAddress Node::closest_preceding_finger(size_t keyId, size_t nodeId) {
 
     size_t relative_keyId = getRelativeId(keyId, nodeId);
 
     for(int i = 32; i > 0; i--) {
-        SocketAddress fingerAddress = fingerTable[i];
+        SocketAddress fingerAddress = fingerTable->getFingerEntry(i);
         if(fingerAddress == Poco::Net::SocketAddress()) continue;
 
         size_t fingerId = hashAddress(fingerAddress);
@@ -217,7 +205,7 @@ SocketAddress Node::closest_preceding_finger(size_t keyId, size_t nodeId) {
 
             // remove it from finger table
             else {
-                deleteFingerEntryForNode(fingerAddress);
+                fingerTable->deleteFingerEntryForNode(fingerAddress);
             }
         }
 
@@ -225,73 +213,18 @@ SocketAddress Node::closest_preceding_finger(size_t keyId, size_t nodeId) {
     return getAddress();
 }
 
-int Node::fixFinger(int i, int m) {
-    size_t next = getFingerId(nodeId, i, m);
-	return 1;
-}
-
-void Node::deleteSuccessor() {
-
-    SocketAddress successor = getSuccessor();
-    if (successor == Poco::Net::SocketAddress())
-        return;
-
-    // get last entry of successor
-    int i = 32;
-    for (i = 32; i > 0; i--) {
-        SocketAddress fingerId = fingerTable[i];
-        if (fingerId != Poco::Net::SocketAddress() && fingerId == successor)
-            break;
-    }
-
-    // delete it
-    for (int j = i; j >= 1 ; j--) {
-        updateFingerEntry(j, Poco::Net::SocketAddress());
-    }
-
-    // if predecessor is successor, delete it
-    if (predecessor!= Poco::Net::SocketAddress() && predecessor == getSuccessor())
-        setPredecessor(Poco::Net::SocketAddress());
-
-    // try to fill successor
-    fillSuccessor(this);
-    successor = getSuccessor();
-
-    // if successor is still null or local node,
-    // and the predecessor is another node, keep asking
-    // it's predecessor until find local node's new successor
-    if ((successor == Poco::Net::SocketAddress() || successor == getSuccessor()) &&
-        predecessor != Poco::Net::SocketAddress() && predecessor != getAddress()) {
-
-        SocketAddress p = predecessor;
-        SocketAddress p_pre = Poco::Net::SocketAddress();
-        while (true) {
-            p_pre = requestAddress(p, "YOURPRE");
-            if (p_pre == Poco::Net::SocketAddress())
-                break;
-
-            // if p's predecessor is node is just deleted,
-            // or itself (nothing found in p), or local address,
-            // p is current node's new successor, break
-            if (p_pre == p || p_pre == getAddress() || p_pre == successor) {
-                break;
-            }
-
-            // else, keep asking
-            else {
-                p = p_pre;
-            }
-        }
-
-        // update successor
-        updateFingerEntry(1, p);
-    }
-}
-
-SocketAddress Node::getFingerEntry(int i) {
-    return fingerTable[i];
-}
-
 void Node::getKey(int key) {
     Query(key, this);
+}
+
+void Node::stopThreads() {
+
+    alive = false;
+    listenServer->stop();
+    stabilizer.join();
+
+}
+
+bool Node::getStatus() {
+    return alive;
 }

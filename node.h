@@ -2,17 +2,13 @@
 // Created by apurwa on 2/21/21.
 //
 
-#include <iostream>
-#include <Poco/Net/SocketAddress.h>
-#include <Poco/Net/TCPServer.h>
-#include <Poco/Net/StreamSocket.h>
-#include <Poco/Net/TCPServerConnection.h>
-#include <functional>
-#include <unordered_map>
+#ifndef UNTITLED_NODE_H
+#define UNTITLED_NODE_H
 
-typedef Poco::Net::SocketAddress SocketAddress;
-typedef Poco::Net::StreamSocket StreamSocket;
-typedef Poco::Net::TCPServer TCPServer;
+#include <iostream>
+#include <functional>
+#include "pocoHeader.h"
+#include "Finger.h"
 
 using namespace std;
 
@@ -23,13 +19,14 @@ class Node {
     int port;
     SocketAddress predecessor;
     SocketAddress successor;
-    unordered_map<int, SocketAddress> fingerTable;
-
-    //Node* node;
+    bool alive;
 
 public:
 
+    Finger* fingerTable;
+
     TCPServer* listenServer;
+    Thread stabilizer;
 
     //constructor
     Node(SocketAddress, int);
@@ -40,22 +37,18 @@ public:
     SocketAddress getPredecessor();
     SocketAddress getSuccessor();
     int getPort();
-
+    bool getStatus();
     void createRing();
     bool join(SocketAddress);
     string notifySuccessor(SocketAddress);
     void handleNotification(SocketAddress);
-    void startListner();
     SocketAddress findSuccessor(size_t);
     SocketAddress findPredecessor(size_t);
-    SocketAddress getFingerEntry(int);
-    void updateFingerEntry(int, SocketAddress);
-    void deleteFingerEntryForNode(SocketAddress);
-    void deleteSuccessor();
     void setPredecessor(SocketAddress);
     void setSuccessor(SocketAddress);
-    int fixFinger(int, int);
     void getKey(int);
     SocketAddress closest_preceding_finger(size_t, size_t);
-
+    void stopThreads();
 };
+
+#endif //UNTITLED_NODE_H
