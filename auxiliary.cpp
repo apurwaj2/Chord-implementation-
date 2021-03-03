@@ -15,7 +15,7 @@ size_t getFingerId(size_t nodeID, int i, int m) {
     return value;
 }
 
-size_t hashAddress(Poco::Net::SocketAddress add) {
+size_t hashAddress(SocketAddress add) {
     return hash<string>{}(add.toString());
 }
 
@@ -26,7 +26,7 @@ size_t hashKey(int key) {
 /*
  * Sending request to another node server
  */
-string sendRequest(Poco::Net::SocketAddress server, string request) {
+string sendRequest(SocketAddress server, string request) {
     // try to send request to server
     SocketAddress sa("localhost", server.port());
     StreamSocket ss(sa);

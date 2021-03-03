@@ -13,7 +13,7 @@
 
 typedef Poco::Net::SocketAddress SocketAddress;
 typedef Poco::Net::StreamSocket StreamSocket;
-typedef Poco::Net::TCPServer TCPServer;
+typedef Poco::Net::ServerSocket ServerSocket;
 typedef Poco::Thread Thread;
 
 #endif //UNTITLED_POCOHEADER_H

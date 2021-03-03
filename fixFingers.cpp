@@ -23,7 +23,7 @@ public:
             SocketAddress fingerId = node->findSuccessor(getFingerId(node->getNodeId(),random,32));
             node->fingerTable->updateFingerEntry(random, fingerId);
             try {
-                sleep(240);
+                sleep(60);
             } catch (exception e) {
                 cout << "Exception: " << e.what() << endl;
             }

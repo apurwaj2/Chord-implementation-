@@ -19,14 +19,6 @@ Node::Node(SocketAddress add, int portnum) {
         fingerTable->updateFingerEntry(i, Poco::Net::SocketAddress());
     }
 
-    Poco::Net::ServerSocket serverSocket(getPort());
-    //Configure some server params
-    Poco::Net::TCPServerParams* pParams = new Poco::Net::TCPServerParams();
-    pParams->setMaxThreads(4);
-    pParams->setMaxQueued(4);
-    pParams->setThreadIdleTime(100);
-    listenServer =  new TCPServer (new Poco::Net::TCPServerConnectionFactoryImpl<Listen>(), serverSocket, pParams);
-
     cout << "Node created successfully!" << endl;
 }
 
@@ -64,7 +56,8 @@ void Node::createRing() {
     setSuccessor(socket_address);
     alive= true;
     //start listener
-    listenServer->start();
+    Listen listen(this);
+    listner.start(listen);
     StableRun stable(this);
     stabilizer.start(stable);
     Checker checker(this);
@@ -86,13 +79,18 @@ bool Node::join(SocketAddress address) {
     }
 
     alive = true;
-    listenServer->start();
+    //start listener
+    Listen listen(this);
+    listner.start(listen);
     StableRun stable(this);
     stabilizer.start(stable);
     Checker checker(this);
     checkPred.start(checker);
     fixFinger fixer(this);
     finger.start(fixer);
+
+    stopThreads();
+
     return true;
 }
 
@@ -229,11 +227,10 @@ void Node::getKey(int key) {
 
 void Node::stopThreads() {
 
-    //stabilizer, fixFingers & checkPredecessor should stop after setting alive to false
+    //listener, stabilizer, fixFingers & checkPredecessor should stop after setting alive to false
     alive = false;
-    listenServer->stop();
 
-    sleep(300);
+    sleep(120);
 
 }
 

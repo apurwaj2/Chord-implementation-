@@ -25,10 +25,11 @@ public:
 
     Finger* fingerTable;
 
-    TCPServer* listenServer;
+    Thread listner;
     Thread stabilizer;
     Thread checkPred;
     Thread finger;
+    Thread process;
 
     //constructor
     Node(SocketAddress, int);
