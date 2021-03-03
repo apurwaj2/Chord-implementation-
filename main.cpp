@@ -1,64 +1,86 @@
 #include <iostream>
+#include <string>
 #include "node.h"
 
 using namespace  std;
 
-int main(int argc, char* argv[]) {
+int main() {
 
-    //Using the same local machine so using localhost
-    string node_ipAdd = "localhost";
-    if (strcmp(argv[1], "create") == 0) {
+    string option, port, portNew;
 
-        //First create the chord ring
-        cout << "Create" <<endl;
+    while(1) {
+        //Using the same local machine so using localhost
+        string node_ipAdd = "localhost";
 
-        //Get the port number
-        char* port = argv[2];
-        int portNum = stoi(port);
+        cout<<"Enter anyone of the following options:"<<endl;
+        cout<<"create, join, delete, getkey, quit"<<endl;
 
-        //create socket
-        SocketAddress address(node_ipAdd, portNum);
-        Node *node = new Node(address, portNum);
+        cin >> option;
 
-        //Creates ring
-        node->createRing();
+        if (strcmp(option.c_str(), "create") == 0) {
 
-    } else if (strcmp(argv[1], "join") == 0) {
-        cout << "Join" <<endl;
-        char* port1 = argv[2];
-        int newPort = stoi(port1);
-        char* port2 = argv[3];
-        int portNum = stoi(port2);
+            //First create the chord ring
+            cout << "For create enter the port number for main node" << endl;
+            cin >> port;
 
-        SocketAddress address(node_ipAdd, portNum);
-        Node *node = new Node(address, newPort);
-        bool resp = node->join(address);
+            //Get the port number
+            int portNum = stoi(port);
 
-        if(resp) {
-            cout << "Node successfully joined the chord ring." << endl;
-        } else {
-            cout << "Could not join the new node to the chord ring." << endl;
+            //create socket
+            SocketAddress address(node_ipAdd, portNum);
+            Node *node = new Node(address, portNum);
+
+            //Creates ring
+           // node->createRing();
+
+        } else if (strcmp(option.c_str(), "join") == 0) {
+            cout << "Enter port number of main node for Join" << endl;
+            cin >> port;
+            cout << "Enter port number for the node you want to join" << endl;
+            cin >> portNew;
+
+            int newPort = stoi(port);
+            int portNum = stoi(portNew);
+
+            SocketAddress address(node_ipAdd, portNum);
+            Node *node = new Node(address, newPort);
+         /*   bool resp = node->join(address);
+
+            if (resp) {
+                cout << "Node successfully joined the chord ring." << endl;
+            } else {
+                cout << "Could not join the new node to the chord ring." << endl;
+            }*/
+
+        } else if (strcmp(option.c_str(), "delete") == 0) {
+            cout << "Enter port number of main node for Delete" << endl;
+            cin >> port;
+            cout << "Enter port number for the node you want to delete" << endl;
+            cin >> portNew;
+
+        } else if (strcmp(option.c_str(), "getKey") == 0) {
+            cout << "Enter key for getKey" << endl;
+            cin >> portNew;
+            cout << "Enter port number of main node" << endl;
+            cin >> port;
+
+            int newKey = stoi(portNew);
+            int portNum = stoi(port);
+
+            SocketAddress address(node_ipAdd, portNum);
+            Node *node = new Node(address, portNum);
+
+          //  node->getKey(newKey);
+
+        } else if (strcmp(option.c_str(), "quit") == 0) {
+            break;
+        }
+        else {
+            cout << option << " is an invalid option. Enter a valid option." << endl;
         }
 
-    } else if (strcmp(argv[1], "delete") == 0) {
-        cout << "Delete" << endl;
-    } else if (strcmp(argv[1], "getKey") == 0) {
-        cout << "getKey" << endl;
-        char* key = argv[2];
-        int newKey = stoi(key);
-        char* port = argv[3];
-        int portNum = stoi(port);
-
-        SocketAddress address(node_ipAdd, portNum);
-        Node *node = new Node(address, portNum);
-
-        node->getKey(newKey);
-
-    }  else {
-        cout << argv[1] << " is an invalid option. Enter a valid option." << endl;
     }
 
-    //cout << "End of Main" << endl;
 
     return 0;
 }

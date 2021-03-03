@@ -229,7 +229,6 @@ void Node::stopThreads() {
 
     //listener, stabilizer, fixFingers & checkPredecessor should stop after setting alive to false
     alive = false;
-
     sleep(120);
 
 }
