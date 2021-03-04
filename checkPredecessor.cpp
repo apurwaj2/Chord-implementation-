@@ -17,7 +17,7 @@ public:
     }
 
     void run() {
-        while (node->getStatus() == true) {
+        while (1) {
             SocketAddress predecessor = node->getPredecessor();
             if (predecessor != Poco::Net::SocketAddress()) {
                 string response  = sendRequest(predecessor, "KEEP");

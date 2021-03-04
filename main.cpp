@@ -7,11 +7,10 @@ using namespace  std;
 int main() {
 
     string option, port, portNew;
+    //Using the same local machine so using localhost
+    string node_ipAdd = "localhost";
 
     while(1) {
-        //Using the same local machine so using localhost
-        string node_ipAdd = "localhost";
-
         cout<<"Enter anyone of the following options:"<<endl;
         cout<<"create, join, delete, getkey, quit"<<endl;
 
@@ -31,7 +30,7 @@ int main() {
             Node *node = new Node(address, portNum);
 
             //Creates ring
-           // node->createRing();
+            node->createRing();
 
         } else if (strcmp(option.c_str(), "join") == 0) {
             cout << "Enter port number of main node for Join" << endl;
@@ -44,13 +43,13 @@ int main() {
 
             SocketAddress address(node_ipAdd, portNum);
             Node *node = new Node(address, newPort);
-         /*   bool resp = node->join(address);
+            bool resp = node->join(address);
 
             if (resp) {
                 cout << "Node successfully joined the chord ring." << endl;
             } else {
                 cout << "Could not join the new node to the chord ring." << endl;
-            }*/
+            }
 
         } else if (strcmp(option.c_str(), "delete") == 0) {
             cout << "Enter port number of main node for Delete" << endl;
@@ -70,7 +69,7 @@ int main() {
             SocketAddress address(node_ipAdd, portNum);
             Node *node = new Node(address, portNum);
 
-          //  node->getKey(newKey);
+            node->getKey(newKey);
 
         } else if (strcmp(option.c_str(), "quit") == 0) {
             break;

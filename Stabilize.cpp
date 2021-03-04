@@ -17,7 +17,7 @@ public:
     }
 
     void run() {
-        while (node->getStatus() == true) {
+        while (1) {
             SocketAddress successor = node->getSuccessor();
             if (successor == Poco::Net::SocketAddress() ||
                 successor == node->getAddress()) {

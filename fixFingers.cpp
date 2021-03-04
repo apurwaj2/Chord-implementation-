@@ -18,7 +18,7 @@ public:
     }
 
     void run() {
-        while (node->getStatus() == true) {
+        while (1) {
             random = rand() % 32;
             SocketAddress fingerId = node->findSuccessor(getFingerId(node->getNodeId(),random,32));
             node->fingerTable->updateFingerEntry(random, fingerId);

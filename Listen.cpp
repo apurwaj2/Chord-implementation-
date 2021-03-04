@@ -11,17 +11,18 @@ class Listen: public Poco::Runnable {
 
     Node* node;
 
-    int getSplitString(string input) {
-        stringstream ss(input);
-        string token;
-
-        getline(ss, token, '_');
-
-        return stoi(token);
+    size_t getSplitString(string input) {
+        string token = input.substr(input.find("_") + 1);
+        stringstream ss(token);
+        size_t result;
+        ss >> result;
+        return result;
     }
 
     string processRequest(string request)
     {
+
+        cout<< "Processing the request : " << request << endl;
 
         SocketAddress result = SocketAddress();
         string ret = "";
@@ -34,14 +35,14 @@ class Listen: public Poco::Runnable {
             result = node->closest_preceding_finger(id, node->getNodeId());
             string ip = "localhost";
             int port = result.port();
-            ret = "MYCLOSEST_" + ip + ":" + to_string(port);
+            ret = to_string(port);
         }
         else if (request.find("YOURSUCC") != string::npos) {
             result = node->getSuccessor();
             if (result != Poco::Net::SocketAddress()) {
                 string ip = "localhost";
                 int port = result.port();
-                ret = "MYSUCC_" + ip + ":" + to_string(port);
+                ret = to_string(port);
             }
             else {
                 ret = "NOTHING";
@@ -52,18 +53,17 @@ class Listen: public Poco::Runnable {
             if (result != Poco::Net::SocketAddress()) {
                 string ip = "localhost";
                 int port = result.port();
-                ret = "MYPRE_" + ip + ":" + to_string(port);
+                ret = to_string(port);
             }
             else {
                 ret = "NOTHING";
             }
         } else if (request.find("FINDSUCC") != string::npos) {
-
-            int id = getSplitString(request);
+            size_t id = getSplitString(request);
             result = node->findSuccessor(id);
             string ip = "localhost";
             int port = result.port();
-            ret = "FOUNDSUCC_" + ip + ":" + to_string(port);
+            ret = to_string(port);
 
         } else if (request.find("IAMPRE") != string::npos) {
             int id = getSplitString(request);
@@ -86,21 +86,18 @@ public:
 
         char buffer[BUFFER_SIZE];
         const void *reply;
-        ServerSocket serverSocket(SocketAddress("localhost", 8001));
-        //sleep(1);
+        int port = node->getPort();
+        ServerSocket serverSocket(SocketAddress("localhost", port));
 
-        while(node->getStatus()) {
+        cout<< "Started listening on port " << port << endl;
+
+        while(1) {
             StreamSocket ss = serverSocket.acceptConnection();
             ss.receiveBytes(buffer, sizeof(buffer));
             std::cout<< "Received request : " << string(buffer) << std::endl;
             string reply = processRequest(string(buffer));
-            const void* response = reply.c_str();
-            ss.sendBytes(response, sizeof(response));
-        }
-        try {
-            sleep(5);
-        } catch (exception e) {
-            cout << "Exception: " << e.what() << endl;
+            ss.sendBytes(reply.data(), (int) reply.size());
+
         }
     }
 

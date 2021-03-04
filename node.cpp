@@ -70,7 +70,8 @@ bool Node::join(SocketAddress address) {
     if (address != getAddress()) {
         // Trying to join an existing ring
         string id = to_string(nodeId);
-        SocketAddress successor = requestAddress(address, strcat((char *)"FINDSUCC_", id.c_str()));
+        string request = "FINDSUCC_" + id;
+        SocketAddress successor = requestAddress(address, request);
         if(successor == Poco::Net::SocketAddress()) {
             cout << "Cannot find the node to join the ring" << endl;
             return false;
@@ -89,16 +90,15 @@ bool Node::join(SocketAddress address) {
     fixFinger fixer(this);
     finger.start(fixer);
 
-    stopThreads();
-
     return true;
 }
 
 string Node::notifySuccessor(SocketAddress successor) {
     if (successor != getAddress()) {
         string port = to_string(getPort());
-        char* address = strcat((char *)"localhost", port.c_str());
-        return sendRequest(successor, strcat((char *) "IAMPRE_", address));
+        string address = "localhost" + port;
+        string request = "IAMPRE_" + address;
+        return sendRequest(successor, request);
     } else {
         return "";
     }
@@ -120,7 +120,12 @@ void Node::handleNotification (SocketAddress predecessor) {
 
 SocketAddress Node::findSuccessor(size_t keyId) {
 
+    cout << "Entered findSuccessor " << endl;
+
     SocketAddress successor = getSuccessor();
+
+    cout << "Got successor " << endl;
+
     //find the predecessor of the keyId
     SocketAddress predecessor = findPredecessor(keyId);
     if(predecessor != getAddress()) {
@@ -136,11 +141,16 @@ SocketAddress Node::findSuccessor(size_t keyId) {
 
 SocketAddress Node::findPredecessor(size_t keyId) {
 
+    cout << "Entered find predecessor" << endl;
+
     SocketAddress n = getAddress();
     SocketAddress nSuccessor = getSuccessor();
     size_t relative_successor_id = getRelativeId(hashAddress(getSuccessor()), nodeId);
     size_t relative_key_id = getRelativeId(keyId, nodeId);
     SocketAddress most_recently_alive = n;
+
+    cout << "relative_key_id "<< relative_key_id << endl;
+    cout << "relative_successor_id " << relative_successor_id << endl;
 
     while(!(relative_key_id > 0 && relative_key_id <= relative_successor_id)) {
 
@@ -149,9 +159,9 @@ SocketAddress Node::findPredecessor(size_t keyId) {
         if(n == getAddress()) {
             n = closest_preceding_finger(keyId, getNodeId());
         } else {
-
 			string key = to_string(keyId);
-            SocketAddress result = requestAddress(n, strcat((char *)"CLOSEST_", key.c_str()));
+			string request = "CLOSEST_" + key;
+            SocketAddress result = requestAddress(n, request);
 
             // if fail to get response, set n to most recently
             if (result == Poco::Net::SocketAddress()) {
@@ -191,6 +201,7 @@ SocketAddress Node::findPredecessor(size_t keyId) {
 
     }
 
+    cout << "Reached the end" <<endl;
     return n;
 }
 
@@ -234,5 +245,6 @@ void Node::stopThreads() {
 }
 
 bool Node::getStatus() {
+    cout<<"Status of alive: " << alive << endl;
     return alive;
 }

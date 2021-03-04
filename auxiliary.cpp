@@ -28,6 +28,7 @@ size_t hashKey(int key) {
  */
 string sendRequest(SocketAddress server, string request) {
     // try to send request to server
+    cout<<"Port " << server.port() << endl;
     SocketAddress sa("localhost", server.port());
     StreamSocket ss(sa);
     try {
@@ -53,6 +54,8 @@ string sendRequest(SocketAddress server, string request) {
 }
 
 SocketAddress requestAddress (SocketAddress server, string request) {
+
+    cout << "Entered requestAddress : " << request << endl;
 
     string response = sendRequest(server, request);
     if (response == "") {
@@ -157,7 +160,8 @@ void Query(int key, Node* node) {
     size_t keyId = hashKey(key);
     cout << "Hash value is " << keyId << endl;
     string keyHash = to_string(keyId);
-    SocketAddress result = requestAddress(node->getAddress(), strcat((char *)"FINDSUCC_", keyHash.c_str()));
+    string request = "FINDSUCC_" + keyHash;
+    SocketAddress result = requestAddress(node->getAddress(), request);
 
     // if fail to send request, local node is disconnected, exit
     if (result == Poco::Net::SocketAddress()) {
